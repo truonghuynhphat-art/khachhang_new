@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bank-postgres
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./full-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: bank-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # ĐANG TẠM - sẽ sửa đúng tên property sau khi xem application.properties
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  postgres_data:
